@@ -3,6 +3,7 @@ from threading import Thread
 
 from dotenv import load_dotenv
 from flask import Flask
+from waitress import serve
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
@@ -19,9 +20,8 @@ def home():
     return "I am alive!"
 
 def run_flask():
-    # Render provides a 'PORT' environment variable automatically
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    serve(app, host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run_flask)
@@ -49,6 +49,13 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         text = update.message.text
+        parts = text.split()
+
+        if not all(p.replace('.', '', 1).isdigit() for p in parts):
+            await update.message.reply_text("Please enter numbers only. Example: 57 3.5 4...")
+            return
+
+
         seq = list(map(float, text.split()))
         credits_completed = seq[0]
         prev_cg = seq[1]
